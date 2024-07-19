@@ -54,7 +54,6 @@ const init = async () => {
       }
 
       // mempertahankan penanganan client error oleh hapi secara native, seperti 404, etc.
-      console.log(response);
       if (!response.isServer) {
         return h.continue;
       }

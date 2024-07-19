@@ -29,8 +29,26 @@ class SongsService {
     return result.rows[0].id;
   }
 
-  async getSongs() {
-    const result = await this._pool.query('SELECT * FROM songs');
+  async getSongs({ title, performer }) {
+    let query = 'SELECT * FROM songs';
+    const conditions = [];
+    const values = [];
+
+    if (title) {
+      conditions.push(`title ILIKE $${conditions.length + 1}`);
+      values.push(`%${title}%`);
+    }
+
+    if (performer) {
+      conditions.push(`performer ILIKE $${conditions.length + 1}`);
+      values.push(`%${performer}%`);
+    }
+
+    if (conditions.length > 0) {
+      query += ` WHERE ${conditions.join(' AND ')}`;
+    }
+
+    const result = await this._pool.query(query, values);
     return result.rows.map(mapDBToModelAllSongs);
   }
 
@@ -52,7 +70,6 @@ class SongsService {
     title, year, genre, performer, duration, albumId = null,
   }) {
     const updatedAt = new Date().toISOString();
-    console.log([title, year, genre, performer, duration, albumId, updatedAt, id]);
     const query = {
       text: 'UPDATE songs SET title = $1, year = $2, genre = $3, performer = $4, duration = $5, "albumId" = $6, updated_at = $7 WHERE id = $8 RETURNING id',
       values: [title, year, genre, performer, duration, albumId, updatedAt, id],
