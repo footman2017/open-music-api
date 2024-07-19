@@ -5,10 +5,14 @@ const Hapi = require('@hapi/hapi');
 const albums = require('./api/albums');
 const AlbumsService = require('./services/postgres/AlbumsService');
 const AlbumsValidator = require('./validator/albums');
+const songs = require('./api/songs');
+const SongsService = require('./services/postgres/SongsService');
+const SongsValidator = require('./validator/songs');
 const ClientError = require('./exceptions/ClientError');
 
 const init = async () => {
   const albumsService = new AlbumsService();
+  const songsService = new SongsService();
   const server = Hapi.server({
     port: process.env.PORT,
     host: process.env.HOST,
@@ -27,6 +31,14 @@ const init = async () => {
     },
   });
 
+  await server.register({
+    plugin: songs,
+    options: {
+      service: songsService,
+      validator: SongsValidator,
+    },
+  });
+
   server.ext('onPreResponse', (request, h) => {
     // mendapatkan konteks response dari request
     const { response } = request;
@@ -42,6 +54,7 @@ const init = async () => {
       }
 
       // mempertahankan penanganan client error oleh hapi secara native, seperti 404, etc.
+      console.log(response);
       if (!response.isServer) {
         return h.continue;
       }

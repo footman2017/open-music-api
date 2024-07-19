@@ -1,52 +1,56 @@
 /* eslint-disable no-underscore-dangle */
-class AlbumsHandler {
+class SongsHandler {
   constructor(service, validator) {
     this._service = service;
     this._validator = validator;
   }
 
-  async postAlbumHandler(request, h) {
-    this._validator.validateAlbumPayload(request.payload);
-    const { name, year } = request.payload;
-    const albumId = await this._service.addAlbum({ name, year });
+  async postSongHandler(request, h) {
+    this._validator.validateSongPayload(request.payload);
+    const {
+      title, year, genre, performer, duration, albumId,
+    } = request.payload;
+    const songId = await this._service.addSong({
+      title, year, genre, performer, duration, albumId,
+    });
 
     const response = h.response({
       status: 'success',
       message: 'Catatan berhasil ditambahkan',
       data: {
-        albumId,
+        songId,
       },
     });
     response.code(201);
     return response;
   }
 
-  async getAlbumsHandler() {
-    const albums = await this._service.getAlbums();
+  async getSongsHandler() {
+    const songs = await this._service.getSongs();
     return {
       status: 'success',
       data: {
-        albums,
+        songs,
       },
     };
   }
 
-  async getAlbumByIdHandler(request) {
+  async getSongByIdHandler(request) {
     const { id } = request.params;
-    const album = await this._service.getAlbumById(id);
+    const song = await this._service.getSongById(id);
     return {
       status: 'success',
       data: {
-        album,
+        song,
       },
     };
   }
 
-  async putAlbumByIdHandler(request) {
-    this._validator.validateAlbumPayload(request.payload);
+  async putSongByIdHandler(request) {
+    this._validator.validateSongPayload(request.payload);
     const { id } = request.params;
 
-    await this._service.editAlbumById(id, request.payload);
+    await this._service.editSongById(id, request.payload);
 
     return {
       status: 'success',
@@ -54,9 +58,9 @@ class AlbumsHandler {
     };
   }
 
-  async deleteAlbumByIdHandler(request) {
+  async deleteSongByIdHandler(request) {
     const { id } = request.params;
-    await this._service.deleteAlbumById(id);
+    await this._service.deleteSongById(id);
 
     return {
       status: 'success',
@@ -65,4 +69,4 @@ class AlbumsHandler {
   }
 }
 
-module.exports = AlbumsHandler;
+module.exports = SongsHandler;
