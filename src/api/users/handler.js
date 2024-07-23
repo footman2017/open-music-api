@@ -25,16 +25,16 @@ class UsersHandler {
     return response;
   }
 
-  async getUserByIdHandler(request) {
-    const { id } = request.params;
-    const user = await this._service.getUserById(id);
-    return {
-      status: 'success',
-      data: {
-        user,
-      },
-    };
-  }
+  // async getUserByIdHandler(request) {
+  //   const { id } = request.params;
+  //   const user = await this._service.getUserById(id);
+  //   return {
+  //     status: 'success',
+  //     data: {
+  //       user,
+  //     },
+  //   };
+  // }
 }
 
 module.exports = UsersHandler;
