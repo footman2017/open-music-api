@@ -27,16 +27,6 @@ class PlaylistsService {
   }
 
   async addPlaylistSongs({ playlistId, songId }) {
-    const querySong = {
-      text: 'SELECT * FROM songs WHERE id = $1',
-      values: [songId],
-    };
-    const resultSong = await this._pool.query(querySong);
-
-    if (!resultSong.rows.length) {
-      throw new NotFoundError('Lagu tidak ditemukan');
-    }
-
     const id = nanoid(16);
     const query = {
       text: 'INSERT INTO playlist_songs VALUES($1, $2, $3) RETURNING id',
@@ -51,7 +41,7 @@ class PlaylistsService {
     return result.rows[0].id;
   }
 
-  async verifyPlaylistOwner(id, owner) {
+  async verifyPlaylistOwner(id, owner, isDelete = false) {
     const query = {
       text: 'SELECT * FROM playlists WHERE id = $1',
       values: [id],
@@ -62,16 +52,36 @@ class PlaylistsService {
     }
     const playlist = result.rows[0];
     if (playlist.owner !== owner) {
-      throw new AuthorizationError('Anda tidak berhak mengakses resource ini');
+      if (!isDelete) {
+        const queryCollab = {
+          text: 'SELECT * FROM collaborations WHERE playlist_id = $1 AND user_id = $2',
+          values: [id, owner],
+        };
+
+        const resultCollab = await this._pool.query(queryCollab);
+
+        if (!resultCollab.rows.length) {
+          throw new AuthorizationError('Anda tidak berhak mengakses resource ini');
+        }
+      } else {
+        throw new AuthorizationError('Anda tidak berhak mengakses resource ini');
+      }
     }
   }
 
   async getPlaylists(owner) {
     const query = {
       text: `
-        SELECT p.id, p."name", u.username FROM playlists p 
+        SELECT p.id, p."name", u.username 
+        FROM playlists p 
         LEFT JOIN users u ON u.id = p."owner"
         WHERE p."owner" = $1
+        UNION
+        SELECT p.id, p."name", u.username
+        FROM collaborations c 
+        LEFT JOIN playlists p ON p.id = c.playlist_id 
+        LEFT JOIN users u ON u.id = p.owner
+        WHERE c.user_id = $1
       `,
       values: [owner],
     };
