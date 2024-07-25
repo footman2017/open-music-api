@@ -147,6 +147,51 @@ class PlaylistsService {
       throw new NotFoundError('Playlist gagal dihapus. Id tidak ditemukan');
     }
   }
+
+  // activities
+
+  async addPlaylistSongActivity(playlistId, songId, userId, action) {
+    const query = {
+      text: 'INSERT INTO playlist_song_activities VALUES($1, $2, $3, $4, $5, $6) RETURNING id',
+      values: [nanoid(16), playlistId, songId, userId, action, new Date().toISOString()],
+    };
+
+    const result = await this._pool.query(query);
+    if (!result.rows[0].id) {
+      throw new InvariantError('Activity gagal ditambahkan');
+    }
+
+    return result.rows[0].id;
+  }
+
+  async getPlaylistSongActivity(id) {
+    const query = {
+      text: `
+        select psa.playlist_id, u.username, s.title, "action", "time"
+        from playlist_song_activities psa
+        left join playlists p on p.id = psa.playlist_id 
+        left join songs s on s.id = psa.song_id 
+        left join users u on u.id = psa.user_id
+        where psa.playlist_id = $1
+      `,
+      values: [id],
+    };
+    const result = await this._pool.query(query);
+
+    if (!result.rows.length) {
+      throw new NotFoundError('Playlist activities tidak ditemukan');
+    }
+
+    return {
+      playlistId: result.rows[0].playlist_id,
+      activities: result.rows.map((row) => ({
+        username: row.username,
+        title: row.title,
+        action: row.action,
+        time: row.time,
+      })),
+    };
+  }
 }
 
 module.exports = PlaylistsService;
