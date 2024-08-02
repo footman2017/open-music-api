@@ -1,7 +1,8 @@
 /* eslint-disable no-underscore-dangle */
 class AlbumsHandler {
   constructor(service, validator) {
-    this._service = service;
+    this._service = service.album;
+    this._serviceStorage = service.storage;
     this._validator = validator;
   }
 
@@ -62,6 +63,23 @@ class AlbumsHandler {
       status: 'success',
       message: 'Album berhasil dihapus',
     };
+  }
+
+  async postUploadImageHandler(request, h) {
+    const { cover } = request.payload;
+    const { id } = request.params;
+    this._validator.validateImageHeaders(cover.hapi.headers);
+
+    const filename = await this._serviceStorage.writeFile(cover, cover.hapi);
+
+    await this._service.editAlbumCoverById(id, `http://${process.env.HOST}:${process.env.PORT}/upload/images/${filename}`);
+
+    const response = h.response({
+      status: 'success',
+      message: 'Sampul berhasil diunggah',
+    });
+    response.code(201);
+    return response;
   }
 }
 

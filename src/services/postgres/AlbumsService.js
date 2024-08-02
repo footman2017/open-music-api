@@ -41,6 +41,7 @@ class AlbumsService {
           albums.year,
           albums.created_at,
           albums.updated_at,
+          albums.cover,
           songs.id AS song_id,
           songs.title,
           songs.performer
@@ -62,6 +63,7 @@ class AlbumsService {
       year: result.rows[0].year,
       createdAt: result.rows[0].created_at,
       updatedAt: result.rows[0].updated_at,
+      coverUrl: result.rows[0].cover,
       songs: [],
     };
 
@@ -102,6 +104,20 @@ class AlbumsService {
 
     if (!result.rows.length) {
       throw new NotFoundError('Album gagal dihapus. Id tidak ditemukan');
+    }
+  }
+
+  async editAlbumCoverById(id, coverUrl) {
+    const updatedAt = new Date().toISOString();
+    const query = {
+      text: 'UPDATE albums SET cover = $1, updated_at = $2 WHERE id = $3 RETURNING id',
+      values: [coverUrl, updatedAt, id],
+    };
+
+    const result = await this._pool.query(query);
+
+    if (!result.rows.length) {
+      throw new NotFoundError('Gagal memperbarui album. Id tidak ditemukan');
     }
   }
 }
