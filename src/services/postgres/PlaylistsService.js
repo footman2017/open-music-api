@@ -173,6 +173,7 @@ class PlaylistsService {
         left join songs s on s.id = psa.song_id 
         left join users u on u.id = psa.user_id
         where psa.playlist_id = $1
+        order by time asc
       `,
       values: [id],
     };
