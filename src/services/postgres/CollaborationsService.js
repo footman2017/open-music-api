@@ -30,7 +30,7 @@ class CollaborationsService {
       values: [userId],
     };
     const result = await this._pool.query(query);
-    if (!result.rows.length) {
+    if (!result.rowCount) {
       throw new NotFoundError('User tidak ditemukan');
     }
   }
@@ -41,7 +41,7 @@ class CollaborationsService {
       values: [playlistId, userId],
     };
     const result = await this._pool.query(query);
-    if (result.rows.length) {
+    if (result.rowCount) {
       throw new InvariantError('Collaboration already exist');
     }
   }
@@ -54,7 +54,7 @@ class CollaborationsService {
 
     const result = await this._pool.query(query);
 
-    if (!result.rows.length) {
+    if (!result.rowCount) {
       throw new NotFoundError('Collaboration gagal dihapus. Data tidak ditemukan');
     }
   }
