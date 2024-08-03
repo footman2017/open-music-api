@@ -110,15 +110,18 @@ class AlbumsHandler {
     };
   }
 
-  async getAlbumByLikeHandler(request) {
+  async getAlbumByLikeHandler(request, h) {
     const { id } = request.params;
-    const albumLike = await this._service.getAlbumLike(id);
-    return {
+    const { albumLike, cacheStatus } = await this._service.getAlbumLike(id);
+
+    const response = h.response({
       status: 'success',
       data: {
         likes: albumLike,
       },
-    };
+    });
+    response.header('X-Data-Source', cacheStatus);
+    return response;
   }
 }
 

@@ -6,8 +6,9 @@ const { mapDBToModelAlbum, mapDBToModelAllSongs } = require('../../utils');
 const NotFoundError = require('../../exceptions/NotFoundError');
 
 class AlbumsService {
-  constructor() {
+  constructor(cacheService) {
     this._pool = new Pool();
+    this._cacheService = cacheService;
   }
 
   async addAlbum({ name, year }) {
@@ -69,11 +70,13 @@ class AlbumsService {
 
     result.rows.forEach((row) => {
       if (row.song_id) {
-        album.songs.push(mapDBToModelAllSongs({
-          id: row.song_id,
-          title: row.title,
-          performer: row.performer,
-        }));
+        album.songs.push(
+          mapDBToModelAllSongs({
+            id: row.song_id,
+            title: row.title,
+            performer: row.performer,
+          }),
+        );
       }
     });
 
@@ -145,7 +148,7 @@ class AlbumsService {
     if (!result.rows[0].id) {
       throw new InvariantError('Like album gagal ditambahkan');
     }
-
+    await this._cacheService.delete(`album_like:${albumId}`);
     return result.rows[0].id;
   }
 
@@ -160,19 +163,29 @@ class AlbumsService {
     if (!result.rowCount) {
       throw new NotFoundError('Album gagal dihapus. Id tidak ditemukan');
     }
+
+    await this._cacheService.delete(`album_like:${albumId}`);
   }
 
   async getAlbumLike(id) {
-    const query = {
-      text: 'SELECT * FROM user_album_likes WHERE album_id = $1',
-      values: [id],
-    };
-    const result = await this._pool.query(query);
+    try {
+      const result = await this._cacheService.get(`album_like:${id}`);
+      return { albumLike: parseInt(result, 10), cacheStatus: 'cache' };
+    } catch (error) {
+      const query = {
+        text: 'SELECT * FROM user_album_likes WHERE album_id = $1',
+        values: [id],
+      };
+      const result = await this._pool.query(query);
 
-    if (!result.rowCount) {
-      return 0;
+      if (!result.rowCount) {
+        await this._cacheService.set(`album_like:${id}`, 0);
+        return 0;
+      }
+
+      await this._cacheService.set(`album_like:${id}`, result.rowCount);
+      return { albumLike: result.rowCount, cacheStatus: 'no-cache' };
     }
-    return result.rowCount;
   }
 }
 
